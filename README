@@ -1,6 +1,8 @@
 dbutil.h - A utility header that I've been slowly adding to and using
 in my projects.
 
+Use at your own risk! It's not well tested!
+
 **Current features**
 
 Macros:
