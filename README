@@ -1,0 +1,25 @@
+dbutil.h - A utility header that I've been slowly adding to and using
+in my projects.
+
+**Current features**
+
+Macros:
+- defer( block ): Defer executing a block of code until end-of-scope
+- __unused (if undefined): Declare a variable unused
+- __initializer: Apply to a function to call it before main
+- __packed: To pack structs
+- __concat: Concatenate macro's that need expanding
+
+Debugging:
+- DEBUG(fmt, ...): your standard debug macro
+
+Timing:
+- timespec_diff: Calculate diff between 2 timespecs
+- time_block(struct timespec diff, block): Time a block of code, putting the result in diff
+- time_scope(start, end, diff): Time the code in the current scope, putting the
+  result in diff.
+
+Integer hash table (similar interface to Linux kernel).
+
+Doubly-linked List
+

@@ -15,12 +15,12 @@
 #define __packed __attribute__((packed))
 
 
-#define __concat(a,b) a##b
-#define concat(a,b) __concat(a,b)
+#define ___concat(a,b) a##b
+#define __concat(a,b) __concat(a,b)
 
 #define defer(x) \
-	void concat(__defer, __COUNTER__) () { ({ x; }); }; \
-	__attribute__((cleanup(__bar))) int concat(__defervar, __COUNTER__);
+	void __concat(__defer, __COUNTER__) () { ({ x; }); }; \
+	__attribute__((cleanup(__bar))) int __concat(__defervar, __COUNTER__);
 
 
 /*
