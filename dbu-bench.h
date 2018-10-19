@@ -1,6 +1,7 @@
 #pragma once
 
 #include <assert.h>
+#include <stdalign.h>
 #include "dbu-core.h"
 
 /* Benchmarking framework for microbenchmarking. */
@@ -23,7 +24,7 @@ struct timer {
 	bool calibrated;
 };
 
-struct bench {
+alignas(64) struct bench {
 	/* == HOT; first cache line == */
 	uint64_t start_time_ns;
 	uint64_t iters_total;
