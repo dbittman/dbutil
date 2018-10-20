@@ -1,7 +1,7 @@
 #pragma once
 
-#include <assert.h>
 #include "dbu-core.h"
+#include <assert.h>
 
 /* Benchmarking framework for microbenchmarking. */
 
@@ -26,8 +26,7 @@ struct timer {
 struct bench {
 	/* == HOT; first cache line == */
 	uint64_t start_time_ns;
-	uint64_t iters_total;
-	uint64_t iters_complete;
+	int64_t iters_remaining;
 	const struct timer *timer;
 	bool started;
 
@@ -37,25 +36,33 @@ struct bench {
 	struct bench *next;
 	uint64_t elapsed;
 	double elapsed_err;
+	void *arg;
+	uint64_t iters_total, iters_complete;
 };
-
 
 static inline bool __bench_continue(struct bench *b, long iters)
 {
-	if(unlikely(!b->started)) {
-		assert(b->timer->calibrated);
-		b->started = true;
-		b->iters_complete = 0;
-		b->start_time_ns = b->timer->get_ns(b->timer);
-		return true;
-	}
-	b->iters_complete += iters;
-	if(likely(b->iters_complete < b->iters_total)) {
+	if(likely(b->iters_remaining >= iters)) {
+		b->iters_remaining -= iters;
 		return true;
 	}
 
+	if(unlikely(!b->started)) {
+		assert(b->timer->calibrated);
+		b->started = true;
+		b->iters_remaining = b->iters_total;
+		b->start_time_ns = b->timer->get_ns(b->timer);
+		return true;
+	}
+	//b->iters_complete += iters;
+	//if(likely(b->iters_complete < b->iters_total)) {
+	//	return true;
+	//}
+
 	uint64_t end = b->timer->get_ns(b->timer);
 	b->elapsed = end - b->start_time_ns;
+	b->iters_remaining -= iters;
+	b->iters_complete = b->iters_total + -b->iters_remaining;
 	return false;
 }
 
@@ -234,11 +241,12 @@ static TIMER(cgt, cgt_mon, _cgt_get_ns, _cgt_calib);
 
 static struct bench *__bench_list;
 
-#define BENCH(_fn, nm)                                                                             \
+#define BENCHARG(_fn, nm, _arg)                                                                    \
 	struct bench __bench_##_fn##_##nm = {                                                          \
 		.timer = bench_default_timer,                                                              \
 		.name = #nm,                                                                               \
 		.fn = _fn,                                                                                 \
+		.arg = (void *)_arg,                                                                       \
 	};                                                                                             \
 	__attribute__((constructor)) static inline void __bench_##_fn##_##nm##_init(void)              \
 	{                                                                                              \
@@ -246,6 +254,8 @@ static struct bench *__bench_list;
 		mb->next = __bench_list;                                                                   \
 		__bench_list = mb;                                                                         \
 	}
+
+#define BENCH(f, n) BENCHARG(f, n, NULL)
 
 static inline void __bench_baseline_loop(struct bench *b)
 {
@@ -294,7 +304,7 @@ static inline void __bench_do_run(struct bench *b)
 	int iters = 100;
 	while(true) {
 		b->iters_total = iters;
-		b->iters_complete = 0;
+		b->iters_remaining = 0;
 		b->started = false;
 		b->fn(b);
 		if(b->elapsed > 2 * b->timer->instr_err && b->elapsed > 1e6) {
@@ -309,8 +319,6 @@ static inline void bench_escopt(void *p)
 {
 	asm volatile("" ::"g"(p) : "memory");
 }
-
-
 
 #ifdef BENCH_DRIVER
 
@@ -354,14 +362,17 @@ static inline void bench_run(void)
 	if(__bench_opt.print_empty) {
 		__bench_pretty_print(&empty);
 	}
-	for(int i=0;i<__bench_opt.num_runs;i++) {
+	for(int i = 0; i < __bench_opt.num_runs; i++) {
 		for(struct bench *b = __bench_list; b; b = b->next) {
 			__bench_do_run(b);
-			b->elapsed -= loop_cost * b->iters_complete;
+			if(b->elapsed > loop_cost * b->iters_complete)
+				b->elapsed -= loop_cost * b->iters_complete;
+			else
+				b->elapsed = 0;
 			/* errors add in quadrature */
 			b->elapsed_err =
-				sqrt(b->elapsed_err * b->elapsed_err
-						+ loop_cost_err * loop_cost_err * b->iters_complete * b->iters_complete);
+			  sqrt(b->elapsed_err * b->elapsed_err
+			       + loop_cost_err * loop_cost_err * b->iters_complete * b->iters_complete);
 			__bench_pretty_print(b);
 		}
 	}
@@ -374,4 +385,3 @@ int main(int argc, char **argv)
 }
 
 #endif
-
