@@ -18,13 +18,13 @@ struct option {
 #define OPTION(t, _p, so, dsc)                                                                     \
 	(struct option)                                                                                \
 	{                                                                                              \
-		.type = t, .p = _p, .shrt = so, .desc = dsc                                                 \
+		.type = t, .p = _p, .shrt = so, .desc = dsc                                                \
 	}
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <stdio.h>
 
 static inline void db_options_usage(struct option *opts, size_t num)
 {
@@ -33,25 +33,24 @@ static inline void db_options_usage(struct option *opts, size_t num)
 		fprintf(stderr, "-%s ", opts[i].shrt);
 		switch(opts[i].type) {
 			case OPTION_BOOL:
-				fprintf(stderr, "        : %10s : %s\n",
-						*(bool *)opts[i].p ? "true" : "false", opts[i].desc);
+				fprintf(stderr,
+				  "        : %10s : %s\n",
+				  *(bool *)opts[i].p ? "true" : "false",
+				  opts[i].desc);
 				break;
 			case OPTION_INT:
-				fprintf(stderr, "INTEGER : %10d : %s\n",
-						*(int *)opts[i].p, opts[i].desc);
+				fprintf(stderr, "INTEGER : %10d : %s\n", *(int *)opts[i].p, opts[i].desc);
 				break;
 			case OPTION_STRING:
-				fprintf(stderr, "STRING  : %10s : %s\n",
-						*(char **)opts[i].p, opts[i].desc);
+				fprintf(stderr, "STRING  : %10s : %s\n", *(char **)opts[i].p, opts[i].desc);
 				break;
-
 		}
 	}
 }
 
 static inline void db_options_parse(int argc, char **argv, struct option *opts, size_t num)
 {
-	char *str = calloc(num * 2+1, sizeof(char));
+	char *str = calloc(num * 2 + 1, sizeof(char));
 	strcat(str, "h");
 	for(int i = 0; i < num; i++) {
 		strcat(str, opts[i].shrt);

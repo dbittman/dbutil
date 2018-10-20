@@ -16,19 +16,18 @@
 #define __initializer __attribute__((constructor))
 #define __packed __attribute__((packed))
 
+#define ___concat(a, b) a##b
+#define __concat(a, b) ___concat(a, b)
 
-#define ___concat(a,b) a##b
-#define __concat(a,b) __concat(a,b)
-
-#define defer(x) \
-	void __concat(__defer, __COUNTER__) () { ({ x; }); }; \
-	__attribute__((cleanup(__bar))) int __concat(__defervar, __COUNTER__);
+#define defer(x)                                                                                   \
+	void __concat(__defer, __LINE__)()                                                          \
+	{                                                                                              \
+		({ x; });                                                                                  \
+	};                                                                                             \
+	__attribute__((cleanup(__concat(__defer, __LINE__)))) int __concat(__defervar, __COUNTER__);
 
 /*
  * DEBUGGING
  */
 
-#define DEBUG(fmt, ...) \
-	fprintf(stderr, "%s:%d :: " fmt, __FILE__, __LINE__, ##__VA_ARGS__)
-
-
+#define DEBUG(fmt, ...) fprintf(stderr, "%s:%d :: " fmt, __FILE__, __LINE__, ##__VA_ARGS__)
