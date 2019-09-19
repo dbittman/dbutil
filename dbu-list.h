@@ -3,19 +3,36 @@
  * DOUBLE LINKED LIST
  */
 
+#define list_entry(e, type, memb) \
+        container_of(e, type, memb)
+
+#define list_entry_next(item, memb) \
+        list_entry((item)->memb.next, typeof(*(item)), memb)
+
+#define list_entry_prev(item, memb) \
+        list_entry((item)->memb.prev, typeof(*(item)), memb)
+
+#define list_iter_start(list) \
+        (list)->next
+
+#define list_iter_end(list) list
+
+#define list_iter_next(e) (e)->next
+#define list_iter_prev(e) (e)->prev
+
+#define DECLARE_LIST(name) struct list name = { &name, &name }
+
+#define list_empty(l) ((l)->next == (l))
+
 struct list {
 	struct list *next, *prev;
 };
-
-#define DECLARE_LIST(name) struct list name = { &name, &name }
 
 static inline void list_init(struct list *l)
 {
 	l->prev = l;
 	l->next = l;
 }
-
-#define list_empty(l) ((l)->next == (l))
 
 static inline void list_insert(struct list *list, struct list *entry)
 {
@@ -44,21 +61,4 @@ static inline struct list *list_dequeue(struct list *l)
 	list_remove(prev);
 	return prev == l ? NULL : prev;
 }
-
-#define list_entry(e, type, memb) \
-	container_of(e, type, memb)
-
-#define list_entry_next(item, memb) \
-	list_entry((item)->memb.next, typeof(*(item)), memb)
-
-#define list_entry_prev(item, memb) \
-	list_entry((item)->memb.prev, typeof(*(item)), memb)
-
-#define list_iter_start(list) \
-	(list)->next
-
-#define list_iter_end(list) list
-
-#define list_iter_next(e) (e)->next
-#define list_iter_prev(e) (e)->prev
 
